@@ -1,0 +1,8 @@
+name: HeavenLib
+version: ${project.version}
+main: us.rfsmassacre.heavenlib.spigot.HeavenSpigot
+api-version: 1.13
+prefix: HeavenLib
+authors: [RFSMassacre]
+description: The base library for all plugins coded by RFSMassacre.
+website: https://new-heaven.us/
