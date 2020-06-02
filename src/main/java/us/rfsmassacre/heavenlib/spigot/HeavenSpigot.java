@@ -1,6 +1,5 @@
 package us.rfsmassacre.heavenlib.spigot;
 
-
 import org.bukkit.Bukkit;
 import us.rfsmassacre.heavenlib.spigot.plugins.SpigotPlugin;
 
