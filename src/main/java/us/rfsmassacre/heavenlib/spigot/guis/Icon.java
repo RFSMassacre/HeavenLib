@@ -1,7 +1,9 @@
 package us.rfsmassacre.heavenlib.spigot.guis;
 
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import us.rfsmassacre.heavenlib.spigot.managers.LocaleManager;
@@ -13,18 +15,26 @@ public abstract class Icon
     protected int x;
     protected int y;
     protected int amount;
+    protected boolean glowing;
     protected String displayName;
     protected Material material;
     protected List<String> lore;
 
-    public Icon(int x, int y, int amount, Material material, String displayName, List<String> lore)
+    public Icon(int x, int y, int amount, boolean glowing, Material material,
+                String displayName, List<String> lore)
     {
         this.x = x;
         this.y = y;
         this.amount = amount;
+        this.glowing = glowing;
         this.displayName = LocaleManager.format(displayName);
         this.material = material;
         this.lore = lore;
+
+        for (int index = 0; index < lore.size(); index++)
+        {
+            this.lore.set(index, LocaleManager.format(lore.get(index)));
+        }
     }
 
     public int getSlot()
@@ -58,11 +68,16 @@ public abstract class Icon
 
     public void setDisplayName(String displayName)
     {
-        this.displayName = displayName;
+        this.displayName = LocaleManager.format(displayName);
     }
     public void setLore(List<String> lore)
     {
         this.lore = lore;
+
+        for (int index = 0; index < lore.size(); index++)
+        {
+            this.lore.set(index, LocaleManager.format(lore.get(index)));
+        }
     }
 
     public ItemStack getItemStack()
@@ -71,6 +86,13 @@ public abstract class Icon
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(displayName);
         meta.setLore(lore);
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        if (glowing)
+        {
+            meta.addEnchant(Enchantment.BINDING_CURSE, 1, false);
+            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
+
         item.setItemMeta(meta);
         return item;
     }

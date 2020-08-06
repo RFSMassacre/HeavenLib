@@ -64,7 +64,7 @@ public abstract class SpigotItem extends ItemStack
     public boolean equals(ItemStack item)
     {
         if (item.getType().equals(this.getType()) && item.hasItemMeta()
-                && item.getItemMeta().hasLore())
+        && item.getItemMeta().hasLore())
         {
             for (String line : item.getItemMeta().getLore())
             {
@@ -88,7 +88,7 @@ public abstract class SpigotItem extends ItemStack
     public void setItemLore(ArrayList<String> newLore)
     {
         ItemMeta meta = getItemMeta();
-        List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<String>();
+        List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
         if (lore.isEmpty())
         {
             lore.add(LocaleManager.format(id));

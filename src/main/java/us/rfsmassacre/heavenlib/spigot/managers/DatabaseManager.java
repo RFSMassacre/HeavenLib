@@ -5,11 +5,11 @@ import us.rfsmassacre.heavenlib.spigot.plugins.SpigotPlugin;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 public abstract class DatabaseManager<T, X> extends Manager
 {
-    private Connection connection;
     private String hostname;
     private String database;
     private String username;
@@ -40,8 +40,9 @@ public abstract class DatabaseManager<T, X> extends Manager
         //Notify if it can connect to a server.
         try
         {
-            openConnection();
+            Connection connection = createConnection();
             locale.sendLocale(Bukkit.getConsoleSender(), "mysql.connected", "{table}", tableName);
+            closeConnection(connection);
         }
         catch (SQLException | ClassNotFoundException exception)
         {
@@ -49,6 +50,19 @@ public abstract class DatabaseManager<T, X> extends Manager
         }
     }
 
+    private Connection createConnection() throws SQLException, ClassNotFoundException
+    {
+        synchronized (this)
+        {
+            Class.forName("com.mysql.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://" + hostname
+                    + ":" + port + "/" + database + "?autoReconnect=true&useSSL="
+                    + Boolean.toString(ssl).toLowerCase(), username, password);
+
+            return connection;
+        }
+    }
+    /*
     private void openConnection() throws SQLException, ClassNotFoundException
     {
         if (connection != null && !connection.isClosed())
@@ -69,8 +83,8 @@ public abstract class DatabaseManager<T, X> extends Manager
                     + Boolean.toString(ssl).toLowerCase(), username, password);
         }
     }
-
-    private void closeConnection() throws SQLException
+     */
+    public void closeConnection(Connection connection) throws SQLException
     {
         if (connection == null || connection.isClosed())
         {
@@ -80,14 +94,14 @@ public abstract class DatabaseManager<T, X> extends Manager
         connection.close();
     }
 
-    private Statement createStatement() throws SQLException
+    private PreparedStatement prepareStatement(Connection connection, String sql) throws SQLException
     {
         if (connection == null || connection.isClosed())
         {
             return null;
         }
 
-        return connection.createStatement();
+        return connection.prepareStatement(sql);
     }
 
     //Create a table based on the data of the object
@@ -123,14 +137,34 @@ public abstract class DatabaseManager<T, X> extends Manager
     //Save object into the database.
     public abstract void save(T t, boolean async);
 
-    //Save a set of objects into the database
-    public abstract void saveSet(Set<T> set, boolean async);
+    //Update object into the database.
+    public abstract void update(T t, boolean async);
 
     //X is the identifier in order to pull the data from the database.
     public abstract void query(X x, boolean async, CallbackQuery<T> callback);
 
     //Removes object from database
     public abstract void delete(X x, boolean async);
+
+    //Load a set of objects from the database.
+    public Set<T> loadSet(ResultSet result) throws SQLException
+    {
+        Set<T> set = new HashSet<>();
+        while (result.next())
+        {
+            set.add(load(result));
+        }
+        return set;
+    }
+
+    //Save a set of objects into the database
+    public void saveSet(Set<T> set, boolean async)
+    {
+        for (T t : set)
+        {
+            save(t, async);
+        }
+    }
 
     /*
      * Other things to make retrieving data possible.
@@ -146,20 +180,22 @@ public abstract class DatabaseManager<T, X> extends Manager
         {
             try
             {
-                openConnection();
-
-                Statement statement = createStatement();
-                ResultSet result = statement.executeQuery(sql);
+                Connection connection = createConnection();
+                PreparedStatement statement = prepareStatement(connection, sql);
+                ResultSet result = statement.executeQuery();
                 T t = load(result);
 
                 Bukkit.getScheduler().runTask(instance, () ->
                 {
                     callback.execute(t);
                 });
+
+                closeConnection(connection);
             }
             catch (SQLException | ClassNotFoundException exception)
             {
                 //Do nothing
+                exception.printStackTrace();
             }
         });
     }
@@ -167,16 +203,17 @@ public abstract class DatabaseManager<T, X> extends Manager
     {
         try
         {
-            openConnection();
-
-            Statement statement = createStatement();
+            Connection connection = createConnection();
+            PreparedStatement statement = prepareStatement(connection, sql);
             ResultSet result = statement.executeQuery(sql);
             T t = load(result);
             callback.execute(t);
+            closeConnection(connection);
         }
         catch (SQLException | ClassNotFoundException exception)
         {
             //Do nothing
+            exception.printStackTrace();
         }
     }
 
@@ -186,25 +223,25 @@ public abstract class DatabaseManager<T, X> extends Manager
         {
             try
             {
-                openConnection();
-
-                Statement statement = createStatement();
+                Connection connection = createConnection();
                 for (String sql : sqls)
                 {
                     try
                     {
+                        PreparedStatement statement = prepareStatement(connection, sql);
                         statement.executeUpdate(sql);
                     }
                     catch (Exception exception)
                     {
                         //Do nothing
-                        //exception.printStackTrace();
+                        exception.printStackTrace();
                     }
                 }
+                closeConnection(connection);
             }
             catch (ClassNotFoundException | SQLException exception)
             {
-                //exception.printStackTrace();
+                exception.printStackTrace();
             }
         });
     }
@@ -212,25 +249,25 @@ public abstract class DatabaseManager<T, X> extends Manager
     {
         try
         {
-            openConnection();
-
-            Statement statement = createStatement();
+            Connection connection = createConnection();
             for (String sql : sqls)
             {
                 try
                 {
+                    PreparedStatement statement = prepareStatement(connection, sql);
                     statement.executeUpdate(sql);
                 }
                 catch (Exception exception)
                 {
                     //Do nothing
-                    //exception.printStackTrace();
+                    exception.printStackTrace();
                 }
             }
+            closeConnection(connection);
         }
         catch (ClassNotFoundException | SQLException exception)
         {
-            //exception.printStackTrace();
+            exception.printStackTrace();
         }
     }
 }
