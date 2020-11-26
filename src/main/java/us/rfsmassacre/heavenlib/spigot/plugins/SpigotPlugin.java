@@ -7,8 +7,6 @@ import us.rfsmassacre.heavenlib.spigot.managers.LocaleManager;
 
 public abstract class SpigotPlugin extends JavaPlugin
 {
-    protected static SpigotPlugin instance;
-
     protected ConfigManager config;
     protected LocaleManager locale;
     protected DependencyManager dependency;
@@ -23,8 +21,6 @@ public abstract class SpigotPlugin extends JavaPlugin
             getDataFolder().mkdir();
         }
 
-        instance = this;
-
         //Load managers
         this.config = new ConfigManager(this);
         this.locale = new LocaleManager(this);
@@ -36,11 +32,6 @@ public abstract class SpigotPlugin extends JavaPlugin
 
     //Override this so you load everything else after.
     public abstract void onPostEnable();
-
-    public static SpigotPlugin getInstance()
-    {
-        return instance;
-    }
 
     public ConfigManager getConfigManager()
     {

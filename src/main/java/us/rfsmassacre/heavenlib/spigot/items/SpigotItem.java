@@ -1,5 +1,8 @@
 package us.rfsmassacre.heavenlib.spigot.items;
 
+import de.tr7zw.nbtapi.NBTCompound;
+import de.tr7zw.nbtapi.NBTItem;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -22,14 +25,15 @@ public abstract class SpigotItem extends ItemStack
     protected String id;
     protected NamespacedKey key;
     protected Recipe recipe;
+    protected NBTItem nbtItem;
 
-    public SpigotItem(String name, String displayName, ArrayList<String> lore, String id, Material material)
+    public SpigotItem(SpigotPlugin instance, String name, String displayName, ArrayList<String> lore, String id, Material material)
     {
         super(material);
 
         this.name = name;
         this.id = id;
-        this.key = new NamespacedKey(SpigotPlugin.getInstance(), name);
+        this.key = new NamespacedKey(instance, name);
         this.recipe = createRecipe();
 
         //Set the new data onto the itemstack
@@ -38,6 +42,10 @@ public abstract class SpigotItem extends ItemStack
 
         //Ensures that the item is constructed before making a new recipe.
         this.recipe = createRecipe();
+
+        this.nbtItem = new NBTItem(this);
+        this.nbtItem.addCompound("Werewolves");
+        this.nbtItem.setString("ID", name);
     }
 
     public String getItemName()
@@ -61,18 +69,26 @@ public abstract class SpigotItem extends ItemStack
         return recipe;
     }
 
-    public boolean equals(ItemStack item)
+    @Override
+    public boolean equals(Object object)
     {
-        if (item.getType().equals(this.getType()) && item.hasItemMeta()
-        && item.getItemMeta().hasLore())
+        if (!(object instanceof ItemStack))
         {
-            for (String line : item.getItemMeta().getLore())
-            {
-                if (line.contains(LocaleManager.format(id)))
-                {
-                    return true;
-                }
-            }
+            return false;
+        }
+
+        ItemStack item = (ItemStack)object;
+        NBTItem other = new NBTItem(item);
+        NBTCompound compound = other.getCompound("Werewolves");
+        if (compound == null)
+        {
+            return false;
+        }
+
+        String value = compound.getString("ID");
+        if (value.equals(this.name))
+        {
+            return true;
         }
 
         return false;
@@ -89,14 +105,7 @@ public abstract class SpigotItem extends ItemStack
     {
         ItemMeta meta = getItemMeta();
         List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
-        if (lore.isEmpty())
-        {
-            lore.add(LocaleManager.format(id));
-        }
-        else
-        {
-            lore.set(0, lore.get(0) + LocaleManager.format(id));
-        }
+        lore.add(id);
         lore.addAll(newLore);
         meta.setLore(lore);
         setItemMeta(meta);

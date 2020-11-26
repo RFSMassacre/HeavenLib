@@ -234,6 +234,11 @@ public abstract class DatabaseManager<T, X> extends Manager
                     catch (Exception exception)
                     {
                         //Do nothing
+                        if (exception.getMessage().contains("Duplicate column name"))
+                        {
+                            continue;
+                        }
+
                         exception.printStackTrace();
                     }
                 }
@@ -260,6 +265,11 @@ public abstract class DatabaseManager<T, X> extends Manager
                 catch (Exception exception)
                 {
                     //Do nothing
+                    if (exception.getMessage().contains("Duplicate column name"))
+                    {
+                        continue;
+                    }
+
                     exception.printStackTrace();
                 }
             }

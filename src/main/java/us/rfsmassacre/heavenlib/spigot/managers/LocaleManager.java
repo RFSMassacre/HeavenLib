@@ -7,15 +7,19 @@ package us.rfsmassacre.heavenlib.spigot.managers;
  * from the new config file.
  */
 
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.minecraft.server.v1_16_R3.IChatBaseComponent;
+import net.minecraft.server.v1_16_R3.PacketPlayOutTitle;
+import net.minecraft.server.v1_16_R3.PlayerConnection;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -122,6 +126,30 @@ public class LocaleManager extends ResourceManager
     public void sendComponentLocale(Player player, String command, String hover, String key, String...replacers)
     {
         sendComponentLocale(true, player, command, hover, key, replacers);
+    }
+
+    public void sendTitleMessage(Player player, int fadeIn, int stay, int fadeOut, String title, String subtitle)
+    {
+        PlayerConnection connection = ((CraftPlayer)player).getHandle().playerConnection;
+        PacketPlayOutTitle packetPlayOutTimes = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TIMES, null, fadeIn, stay, fadeOut);
+        connection.sendPacket(packetPlayOutTimes);
+
+        subtitle = org.bukkit.ChatColor.translateAlternateColorCodes('&', subtitle);
+        IChatBaseComponent titleSub = IChatBaseComponent.ChatSerializer.a("{\"text\": \"" + subtitle + "\"}");
+        PacketPlayOutTitle packetPlayOutSubTitle = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, titleSub);
+        connection.sendPacket(packetPlayOutSubTitle);
+
+        title = org.bukkit.ChatColor.translateAlternateColorCodes('&', title);
+        IChatBaseComponent titleMain = IChatBaseComponent.ChatSerializer.a("{\"text\": \"" + title + "\"}");
+        PacketPlayOutTitle packetPlayOutTitle = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, titleMain);
+        connection.sendPacket(packetPlayOutTitle);
+    }
+    public void broadcastTitleMessage(int fadeIn, int stay, int fadeOut, String title, String subtitle)
+    {
+        for (Player player : Bukkit.getOnlinePlayers())
+        {
+            sendTitleMessage(player, fadeIn, stay, fadeOut, title, subtitle);
+        }
     }
 
     /*
