@@ -126,7 +126,7 @@
             <artifactId>spigot</artifactId>
             <scope>system</scope>
             <version>1.16.4-R0.1-SNAPSHOT</version>
-            <!--> This is simply retrieving directly from the project. <-->
+            <!--> Retrieving externally. Ignore that it's red. <-->
             <systemPath>C:\Users\rflor\BuildTools\spigot-1.16.4.jar</systemPath>
         </dependency>
         <dependency>
