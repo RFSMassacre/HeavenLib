@@ -13,16 +13,14 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_16_R3.IChatBaseComponent;
-import net.minecraft.server.v1_16_R3.PacketPlayOutTitle;
-import net.minecraft.server.v1_16_R3.PlayerConnection;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import us.rfsmassacre.heavenlib.spigot.handlers.PacketHandler;
 
+import java.lang.reflect.Constructor;
 import java.util.List;
 
 public class LocaleManager extends ResourceManager
@@ -128,21 +126,21 @@ public class LocaleManager extends ResourceManager
         sendComponentLocale(true, player, command, hover, key, replacers);
     }
 
-    public void sendTitleMessage(Player player, int fadeIn, int stay, int fadeOut, String title, String subtitle)
+    public void sendTitleMessage(Player player, int fadeIn, int stay, int fadeOut, String title, String subtitle,
+                                 String...replacers)
     {
-        PlayerConnection connection = ((CraftPlayer)player).getHandle().playerConnection;
-        PacketPlayOutTitle packetPlayOutTimes = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TIMES, null, fadeIn, stay, fadeOut);
-        connection.sendPacket(packetPlayOutTimes);
+        title = format(replaceHolders(title, replacers));
+        subtitle = format(replaceHolders(subtitle, replacers));
 
-        subtitle = org.bukkit.ChatColor.translateAlternateColorCodes('&', subtitle);
-        IChatBaseComponent titleSub = IChatBaseComponent.ChatSerializer.a("{\"text\": \"" + subtitle + "\"}");
-        PacketPlayOutTitle packetPlayOutSubTitle = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, titleSub);
-        connection.sendPacket(packetPlayOutSubTitle);
+        player.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
+    }
+    public void sendTitleLocale(Player player, boolean prefix, int fadeIn, int stay, int fadeOut, String titleKey,
+                                String subtitleKey, String...replacers)
+    {
+        String title = prefix ? getMessage("prefix") + getMessage(titleKey) : getMessage(titleKey);
+        String subtitle = prefix ? getMessage("prefix") + getMessage(subtitleKey) : getMessage(subtitleKey);
 
-        title = org.bukkit.ChatColor.translateAlternateColorCodes('&', title);
-        IChatBaseComponent titleMain = IChatBaseComponent.ChatSerializer.a("{\"text\": \"" + title + "\"}");
-        PacketPlayOutTitle packetPlayOutTitle = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, titleMain);
-        connection.sendPacket(packetPlayOutTitle);
+        sendTitleMessage(player, fadeIn, stay, fadeOut, title, subtitle, replacers);
     }
     public void broadcastTitleMessage(int fadeIn, int stay, int fadeOut, String title, String subtitle)
     {
@@ -159,6 +157,10 @@ public class LocaleManager extends ResourceManager
     {
         return ChatColor.translateAlternateColorCodes('&', string);
     }
+    public static String unformat(String string)
+    {
+        return string.replaceAll("§", "&");
+    }
     public static String stripColors(String string)
     {
         return ChatColor.stripColor(format(string));
@@ -166,5 +168,45 @@ public class LocaleManager extends ResourceManager
     public static String title(String string)
     {
         return WordUtils.capitalizeFully(string.toLowerCase().replace("_", " "));
+    }
+    public static String formatTime(int seconds)
+    {
+        return formatTime(false, seconds);
+    }
+    public static String formatTime(boolean showZero, int seconds)
+    {
+        if (seconds <= 0)
+        {
+            return "";
+        }
+
+        int hours = seconds / 3600;
+        int minutes = seconds % 3600 / 60;
+        int remainingSeconds = seconds % 60;
+
+        String hourPlural = hours == 1 ? hours + " Hour" : hours + " Hours";
+        String minutePlural = minutes == 1 ? minutes + " Minute" : minutes + " Minutes";
+        String secondPlural = remainingSeconds == 1 ? remainingSeconds + " Second" : remainingSeconds + " Seconds";
+
+        //Format time to be exact. (I'm picky.)
+        if (hours == 0 & !showZero)
+        {
+            hourPlural = "";
+        }
+        else if (minutes > 0)
+        {
+            hourPlural += ",";
+        }
+
+        if (minutes == 0 & !showZero)
+        {
+            minutePlural = "";
+        }
+        else if (remainingSeconds > 0)
+        {
+            minutePlural += ",";
+        }
+
+        return hourPlural + minutePlural + secondPlural;
     }
 }
